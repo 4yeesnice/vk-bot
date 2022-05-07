@@ -1,63 +1,14 @@
-from pyexpat.errors import messages
-from tkinter import Button
-from turtle import color
-from xml.dom.minidom import Element
-from numpy import positive
+
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardButton, VkKeyboardColor
 import bs4
 from vktools import Keyboard, ButtonColor, Text, Carousel, Element
 from bs4 import BeautifulSoup
-token_vk = "c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212bf"
+token_vk = "c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212b"
 vk_session = vk_api.VkApi(token=token_vk)
 session_api = vk_session.get_api()
 longpoll = VkLongPoll(vk_session)
-# class Vkbot:
-#     def __init__(self, id):
-#         print("created new bot object")
-#         self._USER_ID = id
-#         self._USERNAME = self._get_user_name_from_vk_id(id)
-#         self.COMMANDS = ["HI", "WEATHER", "TIME", "BYE"]
-    
-    
-#     def _get_user_name_from_vk_id(self, id):
-#         request = request.get("https://vk.com/id"+str(id))
-#         bs = bs4.BeautifulSoup(request.text(), "html.parser")
-        
-#         user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
-        
-#         return user_name.split()[0]
-
-#     def new_message(self, message):
-
-#     # Привет
-#         if message.upper() == self._COMMANDS[0]:
-#             return f"Привет-привет, {self._USERNAME}!"
-        
-#         # Погода
-#         elif message.upper() == self._COMMANDS[1]:
-#             return self._get_weather()
-        
-#         # Время
-#         elif message.upper() == self._COMMANDS[2]:
-#             return self._get_time()
-        
-#         # Пока
-#         elif message.upper() == self._COMMANDS[3]:
-#             return f"Пока-пока, {self._USERNAME}!"
-        
-#         else:
-#             return "Не понимаю о чем вы..."
-# def sender(text, id, Keyboard=None):
-#     payload = {"user_id" : id, "message": text, "random_id" : 0 }
-#     if Keyboard == None:
-#         pass
-#     else:
-#         payload["keyboard"] = Keyboard.get_keyboard()
-#     vk_session.method("messages.send", payload )
-
-
 price = {
     "1": 2500,
     "2": 3000,
@@ -69,16 +20,6 @@ total_price = 0
 
 for event in longpoll.listen():
     def sender(text, id, keyboard=None, carousel=None):
-        # payload = {"user_id" : id, "message": text, "random_id" : 0 }
-        # if Keyboard != None:
-        #     payload["keyboard"] = Keyboard.get_keyboard()
-        # elif carousel != None:
-        #     payload["carousel"] = carousel.add_carousel()
-        # else:
-        #     pass
-        # vk_session.method("messages.send", payload )
-    
-
         values = {
             "user_id": id,
             "message": text,
@@ -97,7 +38,7 @@ for event in longpoll.listen():
             print(msg, total_price)
             id = event.user_id
             
-            if msg == "start" or "привет":
+            if msg == "привет":
                 
                 Keyboard = VkKeyboard(one_time=True)
                 Keyboard.add_button("Вперед", VkKeyboardColor.POSITIVE)
