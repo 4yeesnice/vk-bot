@@ -1,132 +1,93 @@
+from price import price
+from vkbottle.bot import Bot, Message
+from vkbottle import Keyboard, KeyboardButtonColor, Text, template_gen, TemplateElement
+from config import token
+import asyncio
+bot = Bot(token="c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212bf")
 
-import vk_api
-from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.keyboard import VkKeyboard, VkKeyboardButton, VkKeyboardColor
-import bs4
-from vktools import Keyboard, ButtonColor, Text, Carousel, Element
-from bs4 import BeautifulSoup
-token_vk = "c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212b"
-vk_session = vk_api.VkApi(token=token_vk)
-session_api = vk_session.get_api()
-longpoll = VkLongPoll(vk_session)
-price = {
-    "1": 2500,
-    "2": 3000,
-    "3": 4000,
-    "4": 5000
 
-}
-total_price = 0
+class User:
+    total_price = 0
+    def __init__(self, id, total_price,korzina):
+        self.id = id
+        self.total_price = total_price
+        self.korzina = korzina
 
-for event in longpoll.listen():
-    def sender(text, id, keyboard=None, carousel=None):
-        values = {
-            "user_id": id,
-            "message": text,
-            "random_id": 0
-        }
+keyboard_vk = Keyboard(one_time=False)
+keyboard_vk.add(Text("Корзина"), color=KeyboardButtonColor.POSITIVE)
+keyboard_vk = keyboard_vk.get_json()
 
-        if carousel is not None:
-            values["template"] = carousel.add_carousel()
-        if keyboard != None:
-            values["keyboard"] = keyboard.get_keyboard()
-        vk_session.method("messages.send", values)
-    
-    if event.type == VkEventType.MESSAGE_NEW:
-        if event.to_me:
-            msg = event.text.lower()
-            print(msg, total_price)
-            id = event.user_id
-            
-            if msg == "привет":
-                
-                Keyboard = VkKeyboard(one_time=True)
-                Keyboard.add_button("Вперед", VkKeyboardColor.POSITIVE)
-                
-                sender("Тебя приветствует bot-helper, и я так понимаю у тебя проблема с учебой, да?\nЕсли хочешь просмотреть мои товары, нажми на кнопку 'Вперед'",id,Keyboard)
-            
+manager_button = Keyboard(one_time=False).add(Text("Связаться с менеджером"), color=KeyboardButtonColor.PRIMARY).get_json()
 
-            if msg[::-1][0].isdigit() and "т"==msg[0]:
-                
-                total_price += price.get(msg[::-1][0])
-            
-            if msg == "вперед":
-                carousel = Carousel(
-                    [
-                        Element(
-                            "Товар 1",
-                            "Description 1",
-                                None,
-                            "https://vk.com/public212630555", # redirect url, if user click on element
-                            [Text("Товар 1", ButtonColor.POSITIVE)]
-                        ),
-                        Element(
-                            "Товар 2",
-                            "Description 2",
-                            None,
-                            "https://vk.com/public212630555", # redirect url, if user click on element
-                            [Text("Товар 2", ButtonColor.PRIMARY)]
-                        ),
-                        Element(
-                            "Товар 3",
-                            "Description 3",
-                            None,
-                            "https://vk.com/public212630555", # redirect url, if user click on element
-                            [Text("Товар 2", ButtonColor.PRIMARY)]
-                        ),
-                    ]
-                )
-                caroseul_2 = Carousel(
-                    [Element(
-                            "Товар 4",
-                            "Description 4",
-                            None,
-                            "https://vk.com/public212630555", # redirect url, if user click on element
-                            [Text("Товар 2", ButtonColor.PRIMARY)]
-                        ),
-                        Element(
-                            "Товар 5",
-                            "Description 5",
-                            None,
-                            "https://vk.com/public212630555", # redirect url, if user click on element
-                            [Text("Товар 2", ButtonColor.PRIMARY)]
-                        ),
-                    ]
-                )
-                btns_names = ["Проверить баланс", "Вернуться в главное меню","Остаться"]
-                btns_colors = [VkKeyboardColor.PRIMARY,VkKeyboardColor.NEGATIVE, VkKeyboardColor.SECONDARY]
-                keyboard = VkKeyboard()
-                for buttons, color in zip(btns_names, btns_colors):
-                    keyboard.add_button(buttons,color)
+oplata_button = Keyboard(one_time=False).add(Text("Оплатить"), color=KeyboardButtonColor.SECONDARY).get_json()
 
-                sender("А вот и мой товар, выбирай что тебе требуется и если хочешь проверить баланс просто нажми на кнопку 'Проверить баланс'",id,carousel=carousel)
-                sender("None", id, carousel=caroseul_2)
-                sender("А вот и кнопки, с помощью которых ты можешь проверить баланс", id, keyboard, None)
-                sender("А, если что ты можешь убрать тот товар, который тебе не нужен, просто написав 'Убери Товар (номер товара)", id)
+users = []
+
+
+@bot.on.private_message()
+async def printer(message: Message):
+    print(message.text, message.attachments[0].market.title)
+
+
+@bot.on.private_message(text="start")
+async def handler(message: Message):
+
+
+    user_info = await bot.api.users.get(message.from_id)
+    users.append(User(user_info[0].id, 0, None))
+    # print(users[0].id)
+    carousel = template_gen(
+        TemplateElement(
+            "Реферат",
+            "Простой Реферат на 150 стр. \nЦена Реферата : 1500 р.",
+            buttons = Keyboard().add(Text("Купить Реферат"), color=KeyboardButtonColor.POSITIVE).get_json()
+        )
+    )
+    await message.answer("Привет, {}. Здесь ты можешь заказать работу, просто выбери что тебе нужно".format(user_info[0].first_name), template=carousel)
+    await message.answer(keyboard=keyboard_vk)
+
+
+
+
+@bot.on.private_message(text="Купить Реферат")
+async def id(message_vk: Message):
+    user_id = await bot.api.users.get(message_vk.from_id)
+    user_id = user_id[0].id
+    korzina = []
+    if users == []:
+        await message_vk.answer("Откуда ты знаешь что писать?:)")
+    else:
+        for user in users:
+            if user.id == user_id:
+                user.total_price += price.get(message_vk.text[7:])
+                korzina.append(message_vk.text[7:])
+                user.korzina = korzina
+                print(user.korzina)
+
+
+
+
+
+
+
+@bot.on.private_message(text="Корзина")
+async def balance(message_vk: Message):
+    user_id = await bot.api.users.get(message_vk.from_id)
+    user_id = user_id[0].id
+    await message_vk.answer("Ваша корзина : ")
+    for user in users:
+        if user.id == user_id:
             
-            
-            
-            
-            
-            
-            
-            
-            
-            # if msg == "вперед":
-                
-            #     Keyboard = VkKeyboard()
-            #     btns_names = ["Проверить баланс", "Вернуться в главное меню","Остаться"]
-            #     btns_colors = [VkKeyboardColor.PRIMARY,VkKeyboardColor.NEGATIVE, VkKeyboardColor.SECONDARY]
-                
-            #     for buttons, color in zip(btns_names, btns_colors):
-            #         Keyboard.add_button(buttons,color)
-                
-            #     sender("Вас понял", id , Keyboard)
-            if "убери" in msg:
-                sender("Хорошо, убираю товар под номером {}".format(msg[::-1][0]), id)
-                total_price -= price.get(msg[::-1][0])
-            
-            if msg == "проверить баланс":
-                
-                sender("Ваш баланс : {}".format(total_price), id)
-        
+            for items in user.korzina:
+                await message_vk.answer("{}".format(items))
+
+            await message_vk.answer("Итого : {} р.".format(user.total_price))
+
+
+
+
+
+
+
+
+bot.run_forever()
