@@ -5,10 +5,9 @@ from config import token
 import asyncio
 bot = Bot(token="c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212bf")
 
-
 class User:
     total_price = 0
-    def __init__(self, id, total_price,korzina):
+    def __init__(self, id, total_price,korzina): ''' Класс Юзера, который пишет сообществу. Создан для того, чтобы не путать пользователей когда их будет больше чем 1'''
         self.id = id
         self.total_price = total_price
         self.korzina = korzina
@@ -26,12 +25,16 @@ users = []
 
 @bot.on.private_message()
 async def printer(message: Message):
-    print(message.text, message.attachments[0].market.title)
+    print(message.text, message.attachments[0].market.title) 
+    '''При взаимодействии с товаром из сообщества, можно отправить в лс товар. Конкретно здесь он фиксирует,
+    под каким названием этот товар'''
 
 
 @bot.on.private_message(text="start")
 async def handler(message: Message):
-
+'''
+Если юзер написал start, то начинается диалог
+'''
 
     user_info = await bot.api.users.get(message.from_id)
     users.append(User(user_info[0].id, 0, None))
@@ -82,8 +85,9 @@ async def balance(message_vk: Message):
                 await message_vk.answer("{}".format(items))
 
             await message_vk.answer("Итого : {} р.".format(user.total_price))
-
-
+'''
+Корзина. Выводит предметы и окончательную цену. Есть несколько циклов, чтобы перебирать юзеров и их "личные" списки покупок
+'''
 
 
 
