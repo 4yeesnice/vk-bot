@@ -5,7 +5,7 @@ from vkbottle.bot import Bot, Message
 from vkbottle import Keyboard, KeyboardButtonColor, Text, template_gen, TemplateElement
 from config import token
 import asyncio
-bot = Bot(token="c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212bf")
+bot = Bot(token="TOKEN")
 
 
 class User:
