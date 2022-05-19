@@ -1,18 +1,27 @@
+
+import pandas as pd
 from price import price
 from vkbottle.bot import Bot, Message
 from vkbottle import Keyboard, KeyboardButtonColor, Text, template_gen, TemplateElement
 from config import token
 import asyncio
-bot = Bot(token="c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a21")
+bot = Bot(token="c8609dc97fbce1d1543d76c138d715942d305af4d873d451650af8ab460a1a961427330e12adf65a212bf")
 
 
 class User:
     total_price = 0
-    def __init__(self, id, total_price,korzina, name):
+    def __init__(self, id, total_price, name, surname):
+        self.korzina = {}
         self.id = id
         self.total_price = total_price
-        self.korzina = korzina
         self.name = name
+        self.surname = surname
+
+    def add_bag(self, tovar, quantity):
+        if tovar in self.korzina.keys():
+            self.korzina[tovar] += 1
+        else:
+            self.korzina[tovar] = quantity
 
 keyboard_vk = Keyboard(one_time=True)
 keyboard_vk.add(Text("Магазин"), color=KeyboardButtonColor.POSITIVE)
@@ -35,11 +44,20 @@ async def handler(message: Message):
 
 
     user_info = await bot.api.users.get(message.from_id)
-    users.append(User(user_info[0].id, 0, None, user_info[0].first_name))
+    users.append(User(user_info[0].id, 0, user_info[0].first_name, user_info[0].last_name))
 
     
-    await message.answer("Привет, {}👋🏻. Здесь ты можешь заказать работу, просто выбери что тебе нужно".format(user_info[0].first_name), keyboard=keyboard_vk)
+    await message.answer("Привет, {}👋🏻. Здесь ты можешь заказать работу, просто выбери что тебе нужно\nНапиши Магазин, чтобы посмотреть наши товары.\nКорзина, чтобы просмотреть свои покупки😉".format(user_info[0].first_name), keyboard=keyboard_vk)
+    for user in users:
+        if user.id == user_info[0].id:
+            df = pd.DataFrame({"Name": [user.name],
+                                            "Surname": [user.surname],
+                                            "Link":["https://vk.com/id{}".format(user.id)],
+                                            "Korzina": [0],
+                                            "Quantity":[0]
+                                        })
 
+            df.to_excel('./vk_bot.xlsx')
 @bot.on.private_message(text="Здравствуйте!\nМеня заинтересовал этот товар.")
 async def printer(message: Message):
 
@@ -47,11 +65,12 @@ async def printer(message: Message):
     user_info_id = user_info[0].id
     await message.answer("Привет, {}👋🏻. Добавить товар в корзину? Тогда напиши название товара".format(user_info[0].first_name))
     if users == []:
-        users.append(User(user_info_id, 0, None, user_info[0].first_name))
+        users.append(User(user_info_id, 0, user_info[0].first_name, user_info[0].last_name))
     else:
         for user in users:
             if user_info_id != user.id:
-                users.append(User(user_info_id, 0, None, user_info[0].first_name))
+                users.append(User(user_info_id, 0, user_info[0].first_name, user_info[0].last_name))
+
 
 @bot.on.private_message(text="Магазин")
 async def shop(message: Message):
@@ -82,30 +101,45 @@ async def shop(message: Message):
 async def add(message: Message):
     user_id = await bot.api.users.get(message.from_id)
     user_id = user_id[0].id
-    korzina = []
     for user in users:
             if user.id == user_id:
                 await message.answer("Добавляю Реферат в корзину. Чтобы просмотреть её, напишите - Корзина или тыкните по кнопке", keyboard=korzina_button)
                 user.total_price += price.get(message.text)
-                korzina.append(message.text)
-                user.korzina = korzina
+                user.add_bag(message.text, 1)
+
+
+@bot.on.chat_message(text="Заказы")
+async def add(message: Message):
+    await message.answer()
+
+
 
 @bot.on.private_message(text="Купить Реферат")
 async def id(message_vk: Message):
     user_id = await bot.api.users.get(message_vk.from_id)
     user_id = user_id[0].id
-    korzina = []
     if users == []:
         await message_vk.answer("Откуда ты знаешь что писать?:)")
     else:
         for user in users:
             if user.id == user_id:
                 user.total_price += price.get(message_vk.text[7:])
-                korzina.append(message_vk.text[7:])
-                user.korzina = korzina
-                print(user.korzina)
+                user.add_bag(message_vk.text[7:], 1)
+        
+@bot.on.private_message(text="Купить Дипломную")
+async def id(message_vk: Message):
+    user_id = await bot.api.users.get(message_vk.from_id)
+    user_id = user_id[0].id
+    if users == []:
+        await message_vk.answer("Откуда ты знаешь что писать?:)")
+    else:
+        for user in users:
+            if user.id == user_id:
+                user.total_price += price.get(message_vk.text[7:])
+                tovar_name = message_vk.text[7:]
+                user.add_bag(tovar_name[:len(tovar_name)-3], 1)
 
-
+                
 
 
 
@@ -120,7 +154,7 @@ async def balance(message_vk: Message):
         if user.id == user_id:
             
             for items in user.korzina:
-                await message_vk.answer("{}".format(items))
+                await message_vk.answer("{0} - {1} шт.".format(items, user.korzina[items]))
 
             await message_vk.answer("Итого : {} р.".format(user.total_price))
 
@@ -130,7 +164,7 @@ async def balance(message_vk: Message):
 
 @bot.on.private_message()
 async def answer(message:Message):
-    await message.answer("Простите, я не понимаю что вы написали. Напишите start для начала общения с ботом")
+    await message.answer("Простите, я не понимаю что вы написали. Напишите start для начала общения с ботом.\nМагазин, чтобы просмотреть товары.\nКорзина, чтобы посмотреть купленные товары.")
 
 
 bot.run_forever()
